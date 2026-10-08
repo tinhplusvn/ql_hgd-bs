@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>Danh sách hộ gia đình - Bản Sấm</title>
+<style>
+:root {
+  --primary:#0f766e; --primary2:#115e59; --bg:#f1f5f9; --card:#fff;
+  --text:#0f172a; --muted:#64748b; --border:#e2e8f0; --danger:#dc2626;
+  --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:1180px;margin:auto;padding:22px}
+header{background:linear-gradient(135deg,#115e59,#0f766e);color:white;padding:28px 0}
+h1{margin:0 0 6px;font-size:28px}
+.subtitle{opacity:.88}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.search{flex:1;min-width:260px;position:relative}
+.search input{width:100%;padding:13px 15px 13px 42px;border:1px solid var(--border);border-radius:12px;font-size:15px;outline:none;background:white}
+.search span{position:absolute;left:14px;top:11px;font-size:19px}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:650;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff} .btn-light{background:#fff;color:var(--text);border:1px solid var(--border)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.stat .num{font-size:25px;font-weight:800;color:var(--primary)} .stat .label{color:var(--muted);font-size:13px;margin-top:3px}
+.card{background:white;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th,td{padding:13px 14px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:#f8fafc;color:#475569;font-size:13px}
+td:first-child,th:first-child{width:60px;text-align:center}
+.name{font-weight:700} .muted{color:var(--muted);font-size:13px}
+.phone{color:var(--primary);font-weight:700;text-decoration:none}
+.actions{white-space:nowrap}
+.action{padding:8px 10px;margin-right:4px;font-size:13px}
+.call{background:#dcfce7;color:#166534} .edit{background:#e0f2fe;color:#075985} .delete{background:#fee2e2;color:#991b1b}
+.empty{padding:45px;text-align:center;color:var(--muted)}
+.pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;flex-wrap:wrap}
+.pages{display:flex;gap:5px;flex-wrap:wrap}
+.page{background:white;border:1px solid var(--border);min-width:38px;padding:8px 10px}
+.page.active{background:var(--primary);color:white;border-color:var(--primary)}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10;align-items:center;justify-content:center;padding:16px}
+.modal{background:white;width:min(560px,100%);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h2{margin-top:0}
+.form-grid{display:grid;gap:13px}
+label{font-size:13px;font-weight:700;color:#475569}
+input,textarea{font:inherit}
+.field{display:grid;gap:6px}
+.field input,.field textarea{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;outline:none}
+.field textarea{min-height:80px;resize:vertical}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.notice{font-size:12px;color:var(--muted);margin:10px 0}
+@media(max-width:700px){
+ .container{padding:14px} h1{font-size:22px} .stats{grid-template-columns:1fr 1fr}
+ .stats .stat:last-child{grid-column:1/-1} .toolbar{margin:14px 0}
+ .toolbar button{flex:1} .search{min-width:100%}
+}
+</style>
+</head>
+<body>
+<header><div class="container">
+  <h1>📋 Danh sách hộ gia đình Bản Sấm</h1>
+  <div class="subtitle">Quản lý thông tin hộ gia đình — dữ liệu được lưu trên thiết bị</div>
+</div></header>
+
+<main class="container">
+  <div class="stats">
+    <div class="stat"><div class="num" id="total">0</div><div class="label">Tổng số hộ</div></div>
+    <div class="stat"><div class="num" id="shown">0</div><div class="label">Kết quả đang hiển thị</div></div>
+    <div class="stat"><div class="num" id="pageInfo">1/1</div><div class="label">Trang hiện tại</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search"><span>🔎</span><input id="search" type="search" placeholder="Tìm theo họ tên hoặc số điện thoại..."></div>
+    <button class="btn-primary" id="addBtn">＋ Thêm hộ</button>
+    <button class="btn-light" id="resetBtn">↺ Khôi phục dữ liệu gốc</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>STT</th><th>Họ và tên chủ hộ</th><th>Địa chỉ</th><th>Số điện thoại</th><th>Ghi chú</th><th>Thao tác</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty" class="empty" style="display:none">Không tìm thấy hộ gia đình phù hợp.</div>
+    <div class="pagination">
+      <div class="muted" id="range"></div>
+      <div class="pages" id="pages"></div>
+    </div>
+  </div>
+  <div class="notice">💾 Thay đổi được lưu tự động trong trình duyệt này. Nút “Khôi phục dữ liệu gốc” sẽ xóa các chỉnh sửa hiện tại.</div>
+</main>
+
+<div class="modal-backdrop" id="modal">
+ <div class="modal">
+   <h2 id="modalTitle">Thêm hộ gia đình</h2>
+   <form id="form" class="form-grid">
+     <input type="hidden" id="editIndex">
+     <div class="field"><label>Họ và tên chủ hộ *</label><input id="name" required></div>
+     <div class="field"><label>Địa chỉ</label><input id="address"></div>
+     <div class="field"><label>Số điện thoại</label><input id="phone" inputmode="tel"></div>
+     <div class="field"><label>Ghi chú</label><textarea id="note"></textarea></div>
+     <div class="modal-actions"><button type="button" class="btn-light" id="cancel">Hủy</button><button class="btn-primary">Lưu thông tin</button></div>
+   </form>
+ </div>
+</div>
+
+<script>
+const ORIGINAL = [{"stt":1,"name":"Đinh Văn Thi","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0867571405","note":""},{"stt":2,"name":"Đinh Văn Hiến","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0367268250","note":""},{"stt":3,"name":"Đinh Văn Hào","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0348180948","note":""},{"stt":4,"name":"Đinh Thị Loan","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0337337785","note":""},{"stt":5,"name":"Đinh Văn Vân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0974296134","note":""},{"stt":6,"name":"Đinh Văn Hiều","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0526229976","note":""},{"stt":7,"name":"Đinh Thị Thực","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0538862520","note":""},{"stt":8,"name":"Đinh Thị Thanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0327189124","note":""},{"stt":9,"name":"Đinh Văn Muôn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0383542829","note":""},{"stt":10,"name":"Đinh Văn Nuôi","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0534510555","note":""},{"stt":11,"name":"Đinh Văn Quy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0966591187","note":""},{"stt":12,"name":"Đinh Văn Tuấn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0363755021","note":""},{"stt":13,"name":"Đinh Văn Hiên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0328220951","note":""},{"stt":14,"name":"Bùi Thị Lượng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0328733000","note":""},{"stt":15,"name":"Đinh Văn Hợp","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0362959611","note":""},{"stt":16,"name":"Đinh Văn Huyền","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0374555909","note":""},{"stt":17,"name":"Quách Thị Quy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0974045828","note":""},{"stt":18,"name":"Đinh Văn Hòa","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0347830405","note":""},{"stt":19,"name":"Đinh Thị Thương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0359356808","note":""},{"stt":20,"name":"Đinh Minh Thắng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0373697101","note":""},{"stt":21,"name":"Bùi Thị Tý","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0399922031","note":""},{"stt":22,"name":"Đinh Văn Hoan","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0962046733","note":""},{"stt":23,"name":"Bùi Văn Tính","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0868770155","note":""},{"stt":24,"name":"Đinh Văn Tinh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0358028169","note":""},{"stt":25,"name":"Bùi Văn Hùng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0345704482","note":""},{"stt":26,"name":"Đinh Văn Nguyên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0977731894","note":""},{"stt":27,"name":"Đinh Văn Tự","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0987948167","note":""},{"stt":28,"name":"Bùi Văn Thanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0337603122","note":""},{"stt":29,"name":"Bùi Văn Thạch","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0364066903","note":""},{"stt":30,"name":"Đinh Quang Lâm","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0528131214","note":""},{"stt":31,"name":"Đinh Văn Nghi","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0967059742","note":""},{"stt":32,"name":"Đinh Văn Hiệu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0366025576","note":""},{"stt":33,"name":"Đinh Thị Hoán","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0395756374","note":""},{"stt":34,"name":"Đinh Văn Lâm","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0979859040","note":""},{"stt":35,"name":"Đinh Văn Thanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0328675506","note":""},{"stt":36,"name":"Bùi Văn Tuân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0985263625","note":""},{"stt":37,"name":"Đinh Văn Thọ","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0583823246","note":""},{"stt":38,"name":"Đinh Văn Thành","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0984453006","note":""},{"stt":39,"name":"Đinh Văn Hiểu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0337853374","note":""},{"stt":40,"name":"Đinh Văn Thủy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0385859114","note":""},{"stt":41,"name":"Đinh Văn Hòa","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0599198350","note":""},{"stt":42,"name":"Đinh Văn Tới","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0354756295","note":""},{"stt":43,"name":"Đinh Văn Hiểu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0329926257","note":""},{"stt":44,"name":"Đinh Thị Tuyết","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0366457314","note":""},{"stt":45,"name":"Đinh Văn Dung","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0528034737","note":""},{"stt":46,"name":"Đinh Văn Dương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0385713305","note":""},{"stt":47,"name":"Đinh Văn Xuân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0967888167","note":""},{"stt":48,"name":"Bùi Quốc Việt","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0996279422","note":""},{"stt":49,"name":"Đinh Văn Chung","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0373729689","note":""},{"stt":50,"name":"Đinh Văn Huy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0397531255","note":""},{"stt":51,"name":"Bùi Thị Ân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0370108755","note":""},{"stt":52,"name":"Đinh Văn Lâm","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0943052030","note":""},{"stt":53,"name":"Đinh Thị Lệ","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0971719482","note":""},{"stt":54,"name":"Ninh Văn Sự","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0366634055","note":""},{"stt":55,"name":"Bùi Văn Thức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0388995067","note":""},{"stt":56,"name":"Bùi Văn Dũng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0383772905","note":""},{"stt":57,"name":"Bùi Văn Cường","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0388185509","note":""},{"stt":58,"name":"Đinh Văn Tiếu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0367729405","note":""},{"stt":59,"name":"Đinh Văn Lập","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0368174505","note":""},{"stt":60,"name":"Đinh Văn Hải","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0369050342","note":""},{"stt":61,"name":"Đinh Văn Hảo","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0378158892","note":""},{"stt":62,"name":"Đinh văn Diện","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0362125513","note":""},{"stt":63,"name":"Đinh Văn Hồng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0358916706","note":""},{"stt":64,"name":"Bùi Văn Vích","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0345346322","note":""},{"stt":65,"name":"Đinh Thị Đăng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0868524672","note":""},{"stt":66,"name":"Bùi Thị Thư","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0375694701","note":""},{"stt":67,"name":"Đinh Văn Mạnh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0366693189","note":""},{"stt":68,"name":"Đinh Văn Hanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0365539218","note":""},{"stt":69,"name":"Đinh Văn Huê","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0967302150","note":""},{"stt":70,"name":"Đinh Văn Thành","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0346256136","note":""},{"stt":71,"name":"Đinh Văn Hưng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0372028914","note":""},{"stt":72,"name":"Bùi Văn Quynh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0387406036","note":""},{"stt":73,"name":"Bùi Văn Lực","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0965044804","note":""},{"stt":74,"name":"Phạm Văn Đồng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0362023279","note":""},{"stt":75,"name":"Đinh Thị Tinh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0339998148","note":""},{"stt":76,"name":"Đinh Văn Anh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0339851620","note":""},{"stt":77,"name":"Đinh Thị Sin","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0976871341","note":""},{"stt":78,"name":"Phạm Văn Quang","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0972023542","note":""},{"stt":79,"name":"Đinh Văn Quý","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0345286076","note":""},{"stt":80,"name":"Đinh Văn Thống","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0365015768","note":""},{"stt":81,"name":"Đinh Văn Thức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0988754182","note":""},{"stt":82,"name":"Đinh Văn Kiên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0971901082","note":""},{"stt":83,"name":"Đinh Văn Quế","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0388274852","note":""},{"stt":84,"name":"Đinh Văn Kiều","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0964107920","note":""},{"stt":85,"name":"Đinh Thị Thảo","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0868408466","note":""},{"stt":86,"name":"Đinh Văn Nhung","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0364608766","note":""},{"stt":87,"name":"Phạm Văn Đông","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0983968095","note":""},{"stt":88,"name":"Đinh Văn Thương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0869803957","note":""},{"stt":89,"name":"Đinh Văn Thời","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0329934995","note":""},{"stt":90,"name":"Đinh Viết Toàn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0394828645","note":""},{"stt":91,"name":"Đinh Thị Dịnh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0981886308","note":""},{"stt":92,"name":"Đinh Văn Tấn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0399327585","note":""},{"stt":93,"name":"Đinh Văn Đông","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0329254615","note":""},{"stt":94,"name":"Đinh Văn Định","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0972093797","note":""},{"stt":95,"name":"Đinh Văn Lương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0968500037","note":""},{"stt":96,"name":"Đinh Minh Dũng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0328440638","note":""},{"stt":97,"name":"Đinh Văn Lợi","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0376979654","note":""},{"stt":98,"name":"Đinh Văn Hậu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0395861883","note":""},{"stt":99,"name":"Đinh Văn Đồi","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0349624807","note":""},{"stt":100,"name":"Phạm Văn Tuấn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0346437402","note":""},{"stt":101,"name":"Đinh Văn Đương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0328557424","note":""},{"stt":102,"name":"Nguyễn Thị Thu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0335086033","note":""},{"stt":103,"name":"Đinh Văn Bích","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0333463487","note":""},{"stt":104,"name":"Đinh Văn Bảo","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0989619113","note":""},{"stt":105,"name":"Trần Thị Luân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0974997835","note":""},{"stt":106,"name":"Đinh Thị Ban","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0989070974","note":""},{"stt":107,"name":"Quách Công Hải","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0965722059","note":""},{"stt":108,"name":"Quách Công Hòa","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0986759611","note":""},{"stt":109,"name":"Hồ Thị Thanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0333605942","note":""},{"stt":110,"name":"Đinh Thị Quyết","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0397414320","note":""},{"stt":111,"name":"Đinh Văn Nhân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0333877541","note":""},{"stt":112,"name":"Đinh Văn Long","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0865877874","note":""},{"stt":113,"name":"Bùi Thị Huề","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0399314762","note":""},{"stt":114,"name":"Đinh Văn Nhật","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0398430655","note":""},{"stt":115,"name":"Nguyễn Văn Thái","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0964196876","note":""},{"stt":116,"name":"Đinh Thị Hiệu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0355968217","note":""},{"stt":117,"name":"Quách Thị Hữu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0354028873","note":""},{"stt":118,"name":"Bùi Thị Ngạn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0342971562","note":""},{"stt":119,"name":"Đinh Thị Trang","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0978423610","note":""},{"stt":120,"name":"Mai Thành Luân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0986891778","note":""},{"stt":121,"name":"Đinh Văn Nhì","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0968050373","note":""},{"stt":122,"name":"Đinh Văn Chiêu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0339155213","note":""},{"stt":123,"name":"Đinh Thị Thoa","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0365648949","note":""},{"stt":124,"name":"Đinh Văn Bằng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0966443363","note":""},{"stt":125,"name":"Đinh Văn Biên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0378368354","note":""},{"stt":126,"name":"Đinh Văn Khoa","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0397944883","note":""},{"stt":127,"name":"Đinh Văn Luận","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"09711329765","note":""},{"stt":128,"name":"Đỗ Văn Đức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0973781489","note":""},{"stt":129,"name":"Đinh Văn Hạnh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0367273528","note":""},{"stt":130,"name":"Quách Văn Hạ","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0343224580","note":""},{"stt":131,"name":"Nguyễn Văn Quang","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0947728628","note":""},{"stt":132,"name":"Đinh Văn Quyên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0359944010","note":""},{"stt":133,"name":"Đinh Văn Tiêu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0395461358","note":""},{"stt":134,"name":"Đinh Văn Thanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0369917387","note":""},{"stt":135,"name":"Đinh Văn Huế","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0394345218","note":""},{"stt":136,"name":"Đinh Văn Tý","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0968088092","note":""},{"stt":137,"name":"Đinh Ngọc Sỹ","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0972065761","note":""},{"stt":138,"name":"Đinh Văn Tân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0383635926","note":""},{"stt":139,"name":"Đinh Văn Tú","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0379887122","note":""},{"stt":140,"name":"Quách Văn Hồng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0374207206","note":""},{"stt":141,"name":"Mai Văn Sinh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"034393330","note":""},{"stt":142,"name":"Đinh Văn Băng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0344769190","note":""},{"stt":143,"name":"Đinh Thị Thủy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0971238345","note":""},{"stt":144,"name":"Đinh Văn Hậu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0394313419","note":""},{"stt":145,"name":"Đinh Thị Bạn","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0917329673","note":""},{"stt":146,"name":"Đinh Văn Dương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0853656660","note":""},{"stt":147,"name":"Đinh Văn Nam","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0981758895","note":""},{"stt":148,"name":"Đinh Văn Đức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0339088527","note":""},{"stt":149,"name":"Đinh Văn Quanh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0981751025","note":""},{"stt":150,"name":"Quách Văn Hà","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0987607528","note":""},{"stt":151,"name":"Đinh Gia Thủy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0981125374","note":""},{"stt":152,"name":"Đinh Văn Thức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0348315423","note":""},{"stt":153,"name":"Nguyễn Thị Đào","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0967365674","note":""},{"stt":154,"name":"Đinh Ngọc Quỳnh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0985978535","note":""},{"stt":155,"name":"Đinh Văn Thu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0961753572","note":""},{"stt":156,"name":"Đinh Văn Cử","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0866486219","note":""},{"stt":157,"name":"Đinh Thị Ngân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0328965601","note":""},{"stt":158,"name":"Đinh Văn Hải","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0362668278","note":""},{"stt":159,"name":"Đinh Văn Chiểu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0359114858","note":""},{"stt":160,"name":"Đinh Văn Hưng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0383987643","note":""},{"stt":161,"name":"Đinh Văn Thắng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0393784313","note":""},{"stt":162,"name":"Đinh Văn Huần","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"03281200205","note":""},{"stt":163,"name":"Đinh Văn Hiền","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0969620190","note":""},{"stt":164,"name":"Đinh Văn Yêu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0944751085","note":""},{"stt":165,"name":"Đinh Văn Thức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0982352916","note":""},{"stt":166,"name":"Đinh Thị Lan","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0915396289","note":""},{"stt":167,"name":"Đinh Văn Thắng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"094002499","note":""},{"stt":168,"name":"Đinh Thị Đẹp","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0333919046","note":""},{"stt":169,"name":"Phạm Văn Đại","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0975663588","note":""},{"stt":170,"name":"Đinh Văn Anh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0349480788","note":""},{"stt":171,"name":"Bùi Văn Sự","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0339196435","note":""},{"stt":172,"name":"Đinh Văn Na","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0326700264","note":""},{"stt":173,"name":"Đinh Văn Nguyên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0368310668","note":""},{"stt":174,"name":"Đinh Văn Nhinh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0369033844","note":""},{"stt":175,"name":"Đinh Văn Nam","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0395783417","note":""},{"stt":176,"name":"Đinh Văn Hậu","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0862037597","note":""},{"stt":177,"name":"Đinh Văn Triều","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0981590748","note":""},{"stt":178,"name":"Hoàng Xuân Thủy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0385107905","note":""},{"stt":179,"name":"Đinh Văn Tường","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0326815262","note":""},{"stt":180,"name":"Đinh Văn Chiến","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0376173368","note":""},{"stt":181,"name":"Đinh Văn Minh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0343287500","note":""},{"stt":182,"name":"Đinh Văn Tính","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0973398084","note":""},{"stt":183,"name":"Đinh Văn Lý","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0347604131","note":""},{"stt":184,"name":"Đinh Văn Thiết","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0389254678","note":""},{"stt":185,"name":"Đinh Văn Nhân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0365804944","note":""},{"stt":186,"name":"Đinh Văn Nhâm","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0943677307","note":""},{"stt":187,"name":"Đinh Văn Phượng","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0965111228","note":""},{"stt":188,"name":"Đinh Văn Luận","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0325230024","note":""},{"stt":189,"name":"Quách Công Hiền","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0971339825","note":""},{"stt":190,"name":"Đinh Văn Anh","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0369200577","note":""},{"stt":191,"name":"Mai Văn Xuân","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0988602271","note":""},{"stt":192,"name":"Bùi Hồng Thắm","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0375007842","note":""},{"stt":193,"name":"Đinh Văn Cường","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0983257516","note":""},{"stt":194,"name":"Đinh Văn Tiên","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0979013786","note":""},{"stt":195,"name":"Đinh Văn Phương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0389489851","note":""},{"stt":196,"name":"Đinh Văn Hòa","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0363729122","note":""},{"stt":197,"name":"Vũ Quang Lợi","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0985614763","note":""},{"stt":198,"name":"Phạm Tiến Chức","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0987461300","note":""},{"stt":199,"name":"Đinh Văn Quy","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0347665482","note":""},{"stt":200,"name":"Đinh Văn Phương","address":"Bản Sấm, Xã Cúc Phương, Tỉnh Ninh Bình","phone":"0969035465","note":""}];
+const KEY = "ban_sam_households_v1";
+const PAGE_SIZE = 20;
+let data = loadData();
+let page = 1;
+let query = "";
+
+function loadData(){
+  try {
+    const saved=localStorage.getItem(KEY);
+    return saved ? JSON.parse(saved) : structuredClone(ORIGINAL);
+  } catch(e) { return structuredClone(ORIGINAL); }
+}
+function save(){localStorage.setItem(KEY, JSON.stringify(data));}
+function norm(s){return String(s||"").toLocaleLowerCase("vi-VN").normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function filtered(){
+  const q=norm(query).trim();
+  if(!q) return data;
+  return data.filter(x=>norm(x.name).includes(q)||String(x.phone||"").includes(q));
+}
+function render(){
+  const rows=filtered();
+  const pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
+  if(page>pages) page=pages;
+  const start=(page-1)*PAGE_SIZE, view=rows.slice(start,start+PAGE_SIZE);
+  document.getElementById("total").textContent=data.length;
+  document.getElementById("shown").textContent=rows.length;
+  document.getElementById("pageInfo").textContent=page+"/"+pages;
+  document.getElementById("range").textContent=rows.length ? `Hiển thị ${start+1}–${Math.min(start+PAGE_SIZE,rows.length)} / ${rows.length}` : "";
+  const tbody=document.getElementById("tbody"), empty=document.getElementById("empty");
+  empty.style.display=view.length?"none":"block";
+  tbody.innerHTML=view.map((x,i)=>{
+    const idx=start+i;
+    return `<tr>
+      <td>${x.stt}</td>
+      <td><div class="name">${esc(x.name)}</div></td>
+      <td>${esc(x.address)}</td>
+      <td>${x.phone?`<a class="phone" href="tel:${escAttr(x.phone)}">📞 ${esc(x.phone)}</a>`:"—"}</td>
+      <td>${esc(x.note)||"—"}</td>
+      <td class="actions">
+        ${x.phone?`<a class="action call" href="tel:${escAttr(x.phone)}">Gọi</a>`:""}
+        <button class="action edit" onclick="openEdit(${idx})">Sửa</button>
+        <button class="action delete" onclick="removeItem(${idx})">Xóa</button>
+      </td>
+    </tr>`;
+  }).join("");
+  const pg=document.getElementById("pages"); pg.innerHTML="";
+  if(pages>1){
+    addPage("‹",Math.max(1,page-1),page===1);
+    for(let p=1;p<=pages;p++) {
+      if(p===1||p===pages||Math.abs(p-page)<=1) addPage(p,p,p===page);
+      else if(p===page-2||p===page+2) { const s=document.createElement("span");s.textContent="…";s.style.padding="9px 5px";pg.appendChild(s); }
+    }
+    addPage("›",Math.min(pages,page+1),page===pages);
+  }
+}
+function addPage(label,p,active){
+  const b=document.createElement("button");b.className="page"+(active?" active":"");b.textContent=label;
+  b.disabled=(label==="‹"||label==="›") && active;b.onclick=()=>{page=p;render();window.scrollTo({top:0,behavior:"smooth"})};document.getElementById("pages").appendChild(b);
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+function escAttr(v){return esc(v).replace(/`/g,"&#096;");}
+function openAdd(){
+ document.getElementById("modalTitle").textContent="Thêm hộ gia đình";
+ document.getElementById("editIndex").value="";
+ document.getElementById("name").value="";document.getElementById("address").value="";
+ document.getElementById("phone").value="";document.getElementById("note").value="";
+ document.getElementById("modal").style.display="flex";document.getElementById("name").focus();
+}
+function openEdit(idx){
+ const x=data[idx];
+ document.getElementById("modalTitle").textContent="Sửa thông tin hộ gia đình";
+ document.getElementById("editIndex").value=idx;
+ document.getElementById("name").value=x.name||"";document.getElementById("address").value=x.address||"";
+ document.getElementById("phone").value=x.phone||"";document.getElementById("note").value=x.note||"";
+ document.getElementById("modal").style.display="flex";document.getElementById("name").focus();
+}
+function closeModal(){document.getElementById("modal").style.display="none";}
+function removeItem(idx){
+ const x=data[idx];
+ if(confirm(`Bạn có chắc muốn xóa hộ “${x.name}” không?`)){
+   data.splice(idx,1); save(); render();
+ }
+}
+document.getElementById("search").addEventListener("input",e=>{query=e.target.value;page=1;render();});
+document.getElementById("addBtn").onclick=openAdd;
+document.getElementById("cancel").onclick=closeModal;
+document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal();});
+document.getElementById("form").addEventListener("submit",e=>{
+ e.preventDefault();
+ const idx=document.getElementById("editIndex").value;
+ const obj={name:document.getElementById("name").value.trim(),address:document.getElementById("address").value.trim(),phone:document.getElementById("phone").value.trim(),note:document.getElementById("note").value.trim()};
+ if(idx===""){
+   const max=data.reduce((m,x)=>Math.max(m,Number(x.stt)||0),0); obj.stt=max+1; data.push(obj);
+ } else data[Number(idx)]={...data[Number(idx)],...obj};
+ save();closeModal();page=1;render();
+});
+document.getElementById("resetBtn").onclick=()=>{
+ if(confirm("Khôi phục toàn bộ dữ liệu gốc từ file Excel? Các chỉnh sửa/thêm/xóa hiện tại sẽ mất.")){
+   data=structuredClone(ORIGINAL);save();page=1;query="";document.getElementById("search").value="";render();
+ }
+};
+render();
+</script>
+</body>
+</html>
